@@ -68,9 +68,9 @@ for i in range(allrowsn):
         all_fig.append_trace(traces[count], i+1, j+1)
         all_fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff')
         if count < len(sensor_list['Thermocouples']):
-            all_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['Thermocouples'][count][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700')
+            all_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['Thermocouples'][count][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
         else:
-            all_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['PT and LC'][count-len(sensor_list['Thermocouples'])][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700')
+            all_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['PT and LC'][count-len(sensor_list['Thermocouples'])][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
         count += 1
 
 all_fig['layout'].update(title='All Plots', height=400*allrowsn, width=1500, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})
@@ -93,8 +93,8 @@ for i in range(rowsn):
             break
         temp_fig['layout']['annotations'][count]['font'].update(color='#ffffff')
         temp_fig.append_trace(traces[count], i+1, j+1)
-        temp_fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700')
-        temp_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['Thermocouples'][count][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700')
+        temp_fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
+        temp_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['Thermocouples'][count][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
         count += 1
 
 temp_fig['layout'].update(title='Temperature Plots', height=400*rowsn, width=1500, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})
@@ -119,8 +119,8 @@ for i in range(rowsn):
             break
         PTLC_fig['layout']['annotations'][count]['font'].update(color='#ffffff')
         PTLC_fig.append_trace(traces[count], i+1, j+1)
-        PTLC_fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700')
-        PTLC_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['PT and LC'][count][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700')
+        PTLC_fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
+        PTLC_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['PT and LC'][count][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
         count += 1
 
 PTLC_fig['layout'].update(title='Pressure Transducer and Load Cell Plots', height=400*rowsn, width=1500, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})
