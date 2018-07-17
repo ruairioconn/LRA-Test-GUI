@@ -23,8 +23,8 @@ for key in sensor_list['Thermocouples']:
     temp_time.append(channel.time_track())
     temp_titles.append(sensor_list['Thermocouples'][key][0])
 
-PTLC_data = [3,6,2,7,9,7,0,6]
-PTLC_time = [1,2,3,4,5,6,7,8]
+PTLC_data = [-5,-3,3,6,2,7,9,7,0,6]
+PTLC_time = [-1,0,1,2,3,4,5,6,7,8]
 PTLC_titles = []
 # PTLC_file = TdmsFile("ls_data.tdms")
 # #volt_file = TdmsFile("ai_voltage_data.tdms")
@@ -66,14 +66,14 @@ for i in range(allrowsn):
             break
         all_fig['layout']['annotations'][count]['font'].update(color='#ffffff')
         all_fig.append_trace(traces[count], i+1, j+1)
-        all_fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff')
+        all_fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
         if count < len(sensor_list['Thermocouples']):
             all_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['Thermocouples'][count][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
         else:
             all_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['PT and LC'][count-len(sensor_list['Thermocouples'])][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
         count += 1
 
-all_fig['layout'].update(title='All Plots', height=400*allrowsn, width=1500, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})
+all_fig['layout'].update(title='All Plots', height=400*allrowsn, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})
 
 traces = []
 n = len(sensor_list['Thermocouples'])
@@ -97,7 +97,7 @@ for i in range(rowsn):
         temp_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['Thermocouples'][count][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
         count += 1
 
-temp_fig['layout'].update(title='Temperature Plots', height=400*rowsn, width=1500, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})
+temp_fig['layout'].update(title='Temperature Plots', height=400*rowsn, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})
 
 traces = []
 n = len(sensor_list['PT and LC'])
@@ -123,23 +123,23 @@ for i in range(rowsn):
         PTLC_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['PT and LC'][count][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
         count += 1
 
-PTLC_fig['layout'].update(title='Pressure Transducer and Load Cell Plots', height=400*rowsn, width=1500, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})
+PTLC_fig['layout'].update(title='Pressure Transducer and Load Cell Plots', height=400*rowsn, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})
 
 ## Dash code
 app.layout = html.Div(id='Page', children=[
-    html.Header(className='row', children=[
-        html.Img(id='Logo', className='one column', src='data:image/png;base64,{}'.format(encoded_image.decode())),
-        html.Div(id='Title', className='six columns', children=[
-            html.H1(children='Test Analysis and Run Program')
+    html.Header(className='row', style={'vertical-align':'middle'}, children=[
+        html.Img(id='Logo', style={'width':'5%', 'height':'10%', 'float':'left'}, src='data:image/png;base64,{}'.format(encoded_image.decode())),
+        html.Div(id='Title', style={'text-align':'center', 'float':'center'}, children=[
+            html.H1(style={'color':'#333f48'}, children='Test Analysis and Run Program')
                 ]),
         # html.Div(id='SidebarToggle', className='three columns')
         ]),
     html.Main(id='PlotPanel', children=[
-        html.Div(id='PlotlPanelHeader', className='row', children=[
-            html.Div(id='PlotPanelTitle', style={'margin':'auto auto'}, children=[
-                html.H3(id='header', children='Temperature Plots')
+        html.Div(id='PlotlPanelHeader', style={'vertical-align':'middle'}, className='row', children=[
+            html.Div(id='PlotPanelTitle', style={'text-align':'center', 'float':'center'}, children=[
+                html.H2(style={'color':'#bf5700'}, children='Plots')
                 ]),
-            html.Div(
+            html.Div(style={'float':'right', 'margin-bottom':'2px', 'width':'20%'}, children=[
                 dcc.Dropdown(
                     id='my-dropdown',
                     options=[
@@ -149,9 +149,9 @@ app.layout = html.Div(id='Page', children=[
                     ],
                     value='Temp'
                 ),
-            )
+            ])
         ]),
-        html.Div(id='Plots', children=dcc.Graph(id='plots'), style={'color': '#333f48'}),
+        html.Div(id='Plots', className='twelve columns', children=dcc.Graph(id='plots'), style={'border': '6px solid #bf5700'}),
     ]),
     html.Div(className='Sidebar')
 ])
@@ -168,18 +168,6 @@ def update_Plots(input_value):
         return PTLC_fig
     if input_value=='All':
         return all_fig
-
-@app.callback(
-    Output(component_id='header', component_property='children'),
-    [Input(component_id='my-dropdown', component_property='value')]
-    )
-def update_Header(input_value):
-    if input_value=='Temp':
-        return 'Temperature Plots'
-    if input_value=='PTLC':
-        return 'Pressure Transducer and Load Cell Plots'
-    if input_value=='All':
-        return 'All Plots'
 
 if __name__ == '__main__':
     app.run_server(debug=True)
