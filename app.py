@@ -10,9 +10,14 @@ from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 from math import ceil
 from plotly import tools
+import numpy as np
 
-sensor_list = {'Thermocouples': {0: ['Nitrous Tank Temp', 'ai0', 'OTC1', 'degC'], 1: ['Combustion Chamber Temp', 'ai1', 'OTC2', 'degC'], 2: ['Throat Temp', 'ai2', 'OTC3', 'degC'], 3: ['Exit Temp', 'ai3', 'OTC4', 'degC']}, 'PT and LC': {0: ['Thrust', 'ai0', 'LC5', 'lb'], 1: ['Accumulator Scale', 'ai1', 'LC1-4', 'lb'], 2: ['Tank Pressure', 'ai2', 'OPT1', 'psi'], 3: ['Feed Pressure', 'ai3', 'OPT2', 'psi'], 4: ['Chamber Pressure', 'ai4', 'OPT3', 'psi'], 5: ['Nitrogen Line Pressure', 'ai5', 'NPT1', 'psi'], 6: ['Pnuematic Line Pressure', 'ai6', 'NPT2', 'psi']}}
+#############################################################################################################################################################################################
+#Dictionary of sensor metadata:
+sensor_list = {'Thermocouples': {0: ['Nitrous Tank Temp', 'ai0', 'OTC1', 'degC'], 1: ['Combustion Chamber Temp', 'ai1', 'OTC2', 'degC'], 2: ['Throat Temp', 'ai2', 'OTC3', 'degC'], 3: ['Exit Temp', 'ai3', 'OTC4', 'degC']}, 'PT and LC': {0: ['Mass Flow Rate', 'null', 'null', 'lb/s'], 1: ['Thrust', 'ai0', 'LC5', 'lb'], 2: ['Accumulator Scale', 'ai1', 'LC1-4', 'lb'], 3: ['Tank Pressure', 'ai2', 'OPT1', 'psi'], 4: ['Feed Pressure', 'ai3', 'OPT2', 'psi'], 5: ['Chamber Pressure', 'ai4', 'OPT3', 'psi'], 6: ['Nitrogen Line Pressure', 'ai5', 'NPT1', 'psi'], 7: ['Pnuematic Line Pressure', 'ai6', 'NPT2', 'psi']}}
 
+#############################################################################################################################################################################################
+#Import data from TDMS files:
 temp_data = []
 temp_time = []
 temp_file = TdmsFile("ai_temp_data.tdms")
@@ -23,26 +28,54 @@ for key in sensor_list['Thermocouples']:
     temp_time.append(channel.time_track())
     temp_titles.append(sensor_list['Thermocouples'][key][0])
 
-PTLC_data = [-5,-3,3,6,2,7,9,7,0,6]
-PTLC_time = [-1,0,1,2,3,4,5,6,7,8]
+raw_PTLC_data = [-5,-3,3,6,2,7,9,7,0,6]
+raw_PTLC_time = [-1,0,1,2,3,4,5,6,7,8]
+PTLC_data = []
+PTLC_time = []
 PTLC_titles = []
 # PTLC_file = TdmsFile("ls_data.tdms")
 # #volt_file = TdmsFile("ai_voltage_data.tdms")
 for key in sensor_list['PT and LC']:
     PTLC_titles.append(sensor_list['PT and LC'][key][0])
 #     channel = temp_file.object('_unnamedTask<2>', 'cDAQsimMod2/' + sensor_list['PT and LC'][key][1])
-#     PTLC_data.append(channel.data)
-#     PTLC_time.append(channel.time_track())
+    PTLC_data.append(raw_PTLC_data)
+    PTLC_time.append(raw_PTLC_time)
+
+PTLC_data[0] = np.gradient(PTLC_data[2])
 
 all_titles = temp_titles + PTLC_titles
 
-app = dash.Dash()
+#############################################################################################################################################################################################
+#Data for table:
+MassFlowRate = np.mean(PTLC_data[0])
+BurnTime = 8
+Impulse = np.trapz(PTLC_data[1], PTLC_time[1])
+Isp = Impulse/(MassFlowRate*9.8)
+PeakThrust = max(PTLC_data[1])
+AvgThrust = Impulse/BurnTime
+ThrustVariance = np.var(PTLC_data[1])
+PeakChamberPress = max(PTLC_data[5])
+AvgChamberPress = np.trapz(PTLC_data[5], PTLC_time[5])/BurnTime
+ChamberPressVariance = np.var(PTLC_data[5])
 
-app.css.append_css({'external_url': 'https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css'})
-Logo = 'Logo.png'
-encoded_image = base64.b64encode(open(Logo, 'rb').read())
+#############################################################################################################################################################################################
+#Create table figure:
+table_trace = go.Table(
+    header=dict(values=['Mass Flow Rate', 'Isp', 'Burn Time', 'Impulse', 'Avg Thrust', 'Peak Thrust', 'Thrust Variance', 'Average Chamber Pressure', 'Peak Chamber Pressure', 'Chamber Pressure Variance'],
+                line = dict(color='#7D7F80'),
+                fill = dict(color='#a1c3d1'),
+                align = ['left'] * 5),
+    cells=dict(values=[MassFlowRate, Isp, BurnTime, Impulse, AvgThrust, PeakThrust, ThrustVariance, AvgChamberPress, PeakChamberPress, ChamberPressVariance],
+               line = dict(color='#7D7F80'),
+               fill = dict(color='#EDFAFF'),
+               align = ['left'] * 5))
 
-## Data preprocessing 
+table_layout = dict(width=1500, height=300)
+table_data = [table_trace]
+table_fig = dict(data=table_data, layout=table_layout)
+
+#############################################################################################################################################################################################
+#Create plot figures for each dropdown value:
 traces = []
 allrowsn = int(ceil((len(sensor_list['Thermocouples']) + len(sensor_list['PT and LC']))/2.0))
 all_fig = tools.make_subplots(rows=allrowsn, cols=2, subplot_titles=all_titles)
@@ -51,13 +84,15 @@ for i in range(len(sensor_list['Thermocouples'])):
     traces.append(go.Scatter(
         x=temp_time[i],
         y=temp_data[i],
+        hoverinfo='y'
     ))
     titles.append(sensor_list['Thermocouples'][i][0])
 for i in range(len(sensor_list['PT and LC'])):
     traces.append(go.Scatter(
-        x=PTLC_time,
-        y=PTLC_data,
-    ))
+        x=PTLC_time[i],
+        y=PTLC_data[i],
+        hoverinfo='y'
+        ))
     titles.append(sensor_list['PT and LC'][i][0])
 count = 0
 for i in range(allrowsn):
@@ -84,6 +119,7 @@ for i in range(len(sensor_list['Thermocouples'])):
     traces.append(go.Scatter(
         x=temp_time[i],
         y=temp_data[i],
+        hoverinfo='y'
     ))
     titles.append(sensor_list['Thermocouples'][i][0])
 count = 0
@@ -106,11 +142,10 @@ PTLC_fig = tools.make_subplots(rows=rowsn, cols=2, subplot_titles=PTLC_titles)
 titles=[]
 for i in range(len(sensor_list['PT and LC'])):
     traces.append(go.Scatter(
-        # x=PTLC_time[i],
-        # y=PTLC_data[i],
-        x=PTLC_time,
-        y=PTLC_data,
-    ))
+        x=PTLC_time[i],
+        y=PTLC_data[i],
+        hoverinfo='y'
+        ))
     titles.append(sensor_list['PT and LC'][i][0])
 count = 0
 for i in range(rowsn):
@@ -123,9 +158,23 @@ for i in range(rowsn):
         PTLC_fig['layout']['yaxis'+str(count + 1)].update(title=sensor_list['PT and LC'][count][3], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
         count += 1
 
+# PTLC_fig['layout']['annotations'][n+1]['font'].update(color='#ffffff')
+# PTLC_fig.append_trace(go.Scatter(x=PTLC_time, y=mdot, hoverinfo='y'), i+1, j+1)
+# PTLC_fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
+# PTLC_fig['layout']['yaxis'+str(count + 1)].update(title='lb/s', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
+
 PTLC_fig['layout'].update(title='Pressure Transducer and Load Cell Plots', height=400*rowsn, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})
 
-## Dash code
+#############################################################################################################################################################################################
+#Create Dash object:
+app = dash.Dash()
+
+#Add CSS and other external dash files
+app.css.append_css({'external_url': 'https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css'})
+Logo = 'Logo.png'
+encoded_image = base64.b64encode(open(Logo, 'rb').read())
+
+#HTML layout
 app.layout = html.Div(id='Page', children=[
     html.Header(className='row', style={'vertical-align':'middle'}, children=[
         html.Img(id='Logo', style={'width':'5%', 'height':'10%', 'float':'left'}, src='data:image/png;base64,{}'.format(encoded_image.decode())),
@@ -134,14 +183,11 @@ app.layout = html.Div(id='Page', children=[
                 ]),
         # html.Div(id='SidebarToggle', className='three columns')
         ]),
-    html.Main(id='PlotPanel', children=[
-        html.Div(id='PlotlPanelHeader', style={'vertical-align':'middle'}, className='row', children=[
-            html.Div(id='PlotPanelTitle', style={'text-align':'center', 'float':'center'}, children=[
-                html.H2(style={'color':'#bf5700'}, children='Plots')
-                ]),
-            html.Div(style={'float':'right', 'margin-bottom':'2px', 'width':'20%'}, children=[
+    html.Main(id='Content', children=[
+        html.Div(id='ContentHeader', style={'vertical-align':'middle'}, className='row', children=[
+            html.Div(style={'float':'left', 'width':'20%'}, children=[
                 dcc.Dropdown(
-                    id='my-dropdown',
+                    id='plot-dropdown',
                     options=[
                         {'label': 'Temperature Plots', 'value': 'Temp'},
                         {'label': 'Transducer and Load Cell Plots', 'value': 'PTLC'},
@@ -149,17 +195,22 @@ app.layout = html.Div(id='Page', children=[
                     ],
                     value='Temp'
                 ),
-            ])
+            ]),
+            html.Div(id='ContentTitle', style={'text-align':'center', 'float':'center'}, children=[
+                html.H2(style={'color':'#bf5700'}, children='Data')
+            ]),
         ]),
-        html.Div(id='Plots', className='twelve columns', children=dcc.Graph(id='plots'), style={'border': '6px solid #bf5700'}),
+        # html.Div(id='Table', children=dcc.Graph(id='table', figure=table_fig)),
+        html.Div(id='Plots', className='twelve columns', children=[dcc.Graph(id='table', figure=table_fig), dcc.Graph(id='plots')], style={'border': '6px solid #bf5700'}),
     ]),
     html.Div(className='Sidebar')
 ])
 
-
+#############################################################################################################################################################################################
+#Callbacks:
 @app.callback(
     Output(component_id='plots', component_property='figure'),
-    [Input(component_id='my-dropdown', component_property='value')]
+    [Input(component_id='plot-dropdown', component_property='value')]
     )
 def update_Plots(input_value):
     if input_value=='Temp':
@@ -169,5 +220,7 @@ def update_Plots(input_value):
     if input_value=='All':
         return all_fig
 
+#############################################################################################################################################################################################
+#Run local host:
 if __name__ == '__main__':
     app.run_server(debug=True)
