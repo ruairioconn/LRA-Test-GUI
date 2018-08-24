@@ -116,7 +116,7 @@ def Live_Table(sensordict, data, unit):
 	for i in range(len(sensordict)):
 		name = sensordict['Name'][i]
 		u = sensordict['SIunit'][i]
-		value = data[len(data)-1][sensordict['Channel'][i]]
+		value = data[sensordict['Abv'][i]][len(data)-1]
 		if unit == 'IPS':
 		    value = SItoIPS(value, u)
 		    u = unitStr(u)
@@ -129,63 +129,106 @@ def Live_Table(sensordict, data, unit):
 	fig = dict(data=[trace])
 	return dcc.Graph(id='live-data-table', figure=fig)       
 
-def makePlots(sensordict, data, unit):
+def makePlots(sensordict, data, unit, burntime, plotdata):
 	traces = []
 	n = len(sensordict)
 	rowsn= int(math.ceil(n/2.0))
-	fig = tools.make_subplots(rows=rowsn, cols=2, subplot_titles=sensordict['Name'])
+	fig = tools.make_subplots(rows=rowsn, cols=2, subplot_titles=sensordict['Name'], print_grid=False)
 	titles=[]
 	if unit == 'SI':
 		for i in range(len(sensordict)):
 		    traces.append(go.Scatter(
-		        x=[row[0] for row in data],
-		        y=[row[sensordict['Channel'][i]] for row in data],
+		        x=[row for row in plotdata['Time']],
+		        y=[row for row in plotdata[sensordict['Abv'][i]]],
 		        hoverinfo='y'
 		    ))
 		    titles.append(sensordict['Name'][i])
-	# print(titles)
 	elif unit == 'IPS':
 		for i in range(len(sensordict)):
 		    traces.append(go.Scatter(
-		        x=[row[0] for row in data],
-		        y=[SItoIPS(row[sensordict['Channel'][i]], sensordict['SIunit'][i]) for row in data],
+		        x=[row for row in plotdata['Time']],
+		        y=[SItoIPS(row, sensordict['SIunit'][i]) for row in plotdata[sensordict['Abv'][i]]],
 		        hoverinfo='y'
 		    ))
 		    titles.append(sensordict['Name'][i])
 	count = 0
-	print(titles)
 	for i in range(rowsn):
 	    for j in range(2):
 	        if count >= n:
 	            break
-	        temp_fig['layout']['annotations'][count]['font'].update(color='#ffffff')
-	        temp_fig.append_trace(traces[count], i+1, j+1)
-	        temp_fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
-	        temp_fig['layout']['yaxis'+str(count + 1)].update(title=sensordict['SIunit'][count], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
+	        fig['layout']['annotations'][count]['font'].update(color='#ffffff')
+	        fig.append_trace(traces[count], i+1, j+1)
+	        fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2, range=[-0.25, burntime+0.25])
+	        fig['layout']['yaxis'+str(count + 1)].update(title=sensordict['SIunit'][count], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
 	        if unit == 'IPS':
 	        	u = unitStr(sensordict['SIunit'][count])
-	        	temp_fig['layout']['yaxis'+str(count + 1)].update(title=u)
+	        	fig['layout']['yaxis'+str(count + 1)].update(title=u)
 	        count += 1
 
-	fig['layout'].update(title='Temperature Plots', height=400*rowsn, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})   
-	return dcc.Graph(id='plots', figure=fig)
+	fig['layout'].update(title='Recorded Data', height=400*rowsn, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})   
+	return dcc.Graph(id='plots', figure=fig, animate=True)
 
 def calibration(sensordict):
 	content = html.Div(children=[
 		html.H2(id='click-message', children=[]),
-		html.Div(children=[html.H3('Channel: '), dcc.Input(id='Channel', placeholder='Channel', type='number')]),
+		html.Div(children=[html.H3('Channel: '), dcc.Input(id='Channel', placeholder='Channel', type='number', value='')]),
 		html.Div(className='row', children=[
 			html.Div(className='one-half column', children = [
-			html.H3('Class: '), dcc.Input(id='Class', placeholder='Class', type='string'),
-			html.H3('Name: '), dcc.Input(id='Name', placeholder='Name', type='string'),
-			html.H3('Abv: '), dcc.Input(id='Abv', placeholder='Abv', type='string')
+			html.H3('Class: '), dcc.Input(id='Class', placeholder='Class', type='string', value=''),
+			html.H3('Name: '), dcc.Input(id='Name', placeholder='Name', type='string', value=''),
+			html.H3('Abv: '), dcc.Input(id='Abv', placeholder='Abv', type='string', value='')
 			]),
 		html.Div(className='one-half column', children = [
-			html.H3('SI unit: '), dcc.Input(id='SIunit', placeholder='SIunit', type='string'),
-			html.H3('a: '), dcc.Input(id='a', placeholder='a', type='number'),
-			html.H3('b: '), dcc.Input(id='b', placeholder='b', type='number')
+			html.H3('SI unit: '), dcc.Input(id='SIunit', placeholder='SIunit', type='string', value=''),
+			html.H3('a: '), dcc.Input(id='a', placeholder='a', type='string', value=''),
+			html.H3('b: '), dcc.Input(id='b', placeholder='b', type='string', value='')
 			])
 			]),
 		html.Button('Write to CSV', id='write-csv')
 		])
 	return content
+
+def createPages(connected, sensordict, data, unit, page, burntime, plotdata):
+	if connected == True:
+		if page == 'PID':
+			live_table = Live_Table(sensordict, data, unit)
+			return html.Div(children=[
+					live_table, 
+					html.Div(className='row', children=[
+							html.Button('OV4', id='OV4', n_clicks=0),
+							html.Button('OV5', id='OV5', n_clicks=0),
+							html.Button('NV2', id='NV2', n_clicks=0),
+							html.Button('WV2', id='WV2', n_clicks=0)
+						]),
+					html.Div(id='act-string')
+				])
+		elif page == 'FillCalc':
+			press = data.loc[len(data)-1][sensordict['Channel'][np.where(sensordict['Name']=='Tank Pressure')[0][0]]]
+			weight = data.loc[len(data)-1][sensordict['Channel'][np.where(sensordict['Name']=='Accumulator Scale')[0][0]]]
+			fill_table = FillCalcTable(press, weight, unit)
+			return fill_table
+		elif page == 'Calibration':
+			content = calibration(sensordict)
+			return content
+		elif page == 'Plots':
+			graph = makePlots(sensordict, data, unit, burntime, plotdata)
+			return graph
+			# return html.H2('No plots to show')
+	if connected == False:
+		if page == 'PID':
+	        # live_table = Live_Table(sensordict, data, unit)
+	        # return live_table
+			return html.H2('No live data to show')
+		elif page == 'FillCalc':
+			# press = data[len(data)-1][sensordict['Channel'][np.where(sensordict['Name']=='Tank Pressure')[0][0]]]
+			# weight = data[len(data)-1][sensordict['Channel'][np.where(sensordict['Name']=='Accumulator Scale')[0][0]]]
+			# fill_table = FillCalcTable(press, weight, unit)
+			# return fill_table
+			return html.H2('No live data to show')
+		elif page == 'Calibration':
+			# content = calibration(sensordict)
+			# return content
+			return html.H2('No live data to show')
+		elif page == 'Plots':
+			graph = makePlots(sensordict, data, unit, burntime, plotdata)
+			return graph

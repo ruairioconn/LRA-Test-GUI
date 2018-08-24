@@ -1,0 +1,2 @@
+Class	Name	Abv	Channel	SIunit	a	b
+Load Cell	Thrust	LC5	5	N	1	0
