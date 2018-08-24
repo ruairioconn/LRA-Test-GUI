@@ -15,6 +15,10 @@ import pandas as pd
 from functions import SItoIPS, unitStr, Live_Table, FillCalcTable, makePlots, calibration, createPages
 from sys import platform
 import functools32
+import logging
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 #########################################################################################################
 # Setup Serial
@@ -116,16 +120,24 @@ def set_Channel(port, n_clicks):
         port = str(port)
         if platform.startswith('lin'):
             print('Connecting to serial port')
-            ser = serial.Serial('/dev/ttyS'+port, 9600)
-            connected = True
-            print(ser.readline())
-            print(connected)
-            return 'Connected on port: /dev/ttyS' + port
+            try:
+                ser = serial.Serial('/dev/ttyS'+port, 9600)
+                connected = True
+                print('Connected on port: ' + port)
+                return 'Connected on port: /dev/ttyS' + port
+            except:
+                print('Serial port not found')
+                return 'Error with serial connection'
         elif platform.startswith('win'):
             print('Connecting to serial port')
-            ser = serial.Serial('COM'+port, 9600)
-            connected = True
-            return 'Connected on port: COM' + port
+            try:
+                ser = serial.Serial('COM'+port, 9600)
+                connected = True
+                print('Connected on port: ' + port)
+                return 'Connected on port: COM' + port
+            except:
+                print('Serial port not found')
+                return 'Error with serial connection'
     elif port == 0 or n_clicks%2 == 0:
         print('Not connected')
         port = str(port)
@@ -163,8 +175,11 @@ def update_Data(page, unit, n_ints, rw, file):
                 sensordict.to_csv('sensor_data/'+file+'_sensor_input.txt', sep='\t')
             if len(livedata) > 10:
                 plotdata = livedata.tail(10)
-            new_page = createPages(connected, sensordict, livedata, unit, page, burntime, plotdata)
-            return new_page
+            try:
+                new_page = createPages(connected, sensordict, livedata, unit, page, burntime, plotdata)
+                return new_page
+            except:
+                return 'Loading data'
 
 @functools32.lru_cache(maxsize=32)
 @app.callback(
@@ -178,19 +193,22 @@ def static_Data(page, unit, rw, file):
     global connected
     global burntime
     if connected == False and rw == 'r':
-        with open('sensor_data/'+file + '_sensor_input.txt') as sensorcsv:
-            sensordict = pd.read_csv(sensorcsv, delimiter='\t')
-        staticdata = pd.read_csv('data/'+file + '.txt', sep='\t')
-        for i in range(len(staticdata['LC5']))[1:]:
-            if abs(staticdata['LC5'][i]) - abs(staticdata['LC5'][i-1]) > 40:
-                starttime = staticdata['Time'][i]
-            elif abs(staticdata['LC5'][i]) - abs(staticdata['LC5'][i-1]) < -40:
-                endtime = staticdata['Time'][i]
-        for i in range(len(staticdata['Time'])):
-            staticdata['Time'][i] -= starttime
-        burntime = endtime - starttime
-        new_page = createPages(connected, sensordict, staticdata, unit, page, burntime, staticdata)
-    return new_page
+        try:
+            with open('sensor_data/'+file + '_sensor_input.txt') as sensorcsv:
+                sensordict = pd.read_csv(sensorcsv, delimiter='\t')
+            staticdata = pd.read_csv('data/'+file + '.txt', sep='\t')
+            for i in range(len(staticdata['LC5']))[1:]:
+                if abs(staticdata['LC5'][i]) - abs(staticdata['LC5'][i-1]) > 40:
+                    starttime = staticdata['Time'][i]
+                elif abs(staticdata['LC5'][i]) - abs(staticdata['LC5'][i-1]) < -40:
+                    endtime = staticdata['Time'][i]
+            for i in range(len(staticdata['Time'])):
+                staticdata['Time'][i] -= starttime
+            burntime = endtime - starttime
+            new_page = createPages(connected, sensordict, staticdata, unit, page, burntime, staticdata)
+            return new_page
+        except:
+            return 'Please enter valid filename'
 
 @functools32.lru_cache(maxsize=32)
 @app.callback(
