@@ -1,0 +1,11 @@
+	Class	Name	Abv	Channel	SIunit	a	b
+0	Limit Switch	LS1	LS1	1		1	0
+1	Limit Switch	LS2	LS2	2		1	0
+2	Limit Switch	LS3	LS3	3		1	0
+3	Limit Switch	LS4	LS4	4		1	0
+4	PT	Tank Pressure	OPT1	5	kPa	1	0
+5	PT	Feed Pressure	OPT2	6	kPa	1	0
+6	PT	Chamber Pressure	OPT3	7	kPa	1	0
+7	Dummy	D	D	8		1	0
+8	Dummy	E	E	9		1	0
+9	Dummy	F	F	10		1	0

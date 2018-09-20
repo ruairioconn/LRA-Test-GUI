@@ -3,7 +3,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import base64
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, Event
 import plotly.graph_objs as go
 import math
 from plotly import tools
@@ -12,13 +12,14 @@ from scipy import optimize
 import serial
 import os
 import pandas as pd
-from functions import SItoIPS, unitStr, Live_Table, FillCalcTable, makePlots, calibration, createPages
+from functions import SItoIPS, unitStr, Live_Table, FillCalcTable, makePlotsStatic, calibration, createPages, makePlotsLive
 from sys import platform
 import functools32
 import logging
+from collections import deque
 
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+# log = logging.getLogger('werkzeug')
+# log.setLevel(logging.ERROR)
 
 #########################################################################################################
 # Setup Serial
@@ -45,6 +46,10 @@ with open('sensor_data/sensor_input.txt') as sensorcsv:
 
 data_header = pd.Series('Time').append(sensordict.Abv, ignore_index=True)
 livedata = pd.DataFrame(columns=data_header)
+
+deque_list = {'Time': deque(maxlen=10)}
+for sensor in sensordict['Abv']:
+    deque_list[sensor] = deque(maxlen=10)
 
 #############################################################################################################################################################################################
 #Create Dash object:
@@ -81,7 +86,7 @@ app.layout = html.Header(id='Page', children=[
             dcc.RadioItems(
                 id='toggle-units',
                 options=[
-                        {'label': 'SI', 'value': 'SI'},
+                        {'label': 'SI/', 'value': 'SI'},
                         {'label': 'IPS', 'value': 'IPS'},
                 ],
                 value='SI'
@@ -92,7 +97,7 @@ app.layout = html.Header(id='Page', children=[
             dcc.RadioItems(
                 id='read-write',
                 options=[
-                        {'label': 'Read', 'value': 'r'},
+                        {'label': 'Read/', 'value': 'r'},
                         {'label': 'Write', 'value': 'w'},
                 ],
                 value='r'
@@ -148,11 +153,11 @@ def set_Channel(port, n_clicks):
     Output(component_id='live-content', component_property='children'),
     [Input(component_id='change-page', component_property='value'),
     Input(component_id='toggle-units', component_property='value'),
-    Input(component_id='update', component_property='n_intervals'),
     Input(component_id='read-write', component_property='value'),
-    Input(component_id='file-id', component_property='value')]
+    Input(component_id='file-id', component_property='value')],
+    events=[Event('update', 'interval')]
     )
-def update_Data(page, unit, n_ints, rw, file):
+def update_Data(page, unit, rw, file):
     global connected
     global ser
     global livedata
@@ -160,8 +165,10 @@ def update_Data(page, unit, n_ints, rw, file):
     if connected == True:
         if ser.inWaiting() > 0:
             new = ser.readline()
-            new = new.split()
+            new = new.split(',')
             new = [float(i) for i in new]
+            print(len(data_header))
+            print(len(new))
             for i in range(len(new)-1):
                 new[i] = new[i]*sensordict['a'][i] + sensordict['b'][i]
             livedata.loc[len(livedata)] = new
@@ -169,17 +176,21 @@ def update_Data(page, unit, n_ints, rw, file):
             burntime = 10
             ser.write(actuation)
             print(actuation)
-            if n_ints%10 == 0 and rw == 'w':
+            if len(livedata['Time'])%10 == 0 and rw == 'w':
                 print('Writing')
                 livedata.to_csv('data/'+file+'.txt', sep='\t')
                 sensordict.to_csv('sensor_data/'+file+'_sensor_input.txt', sep='\t')
-            if len(livedata) > 10:
-                plotdata = livedata.tail(10)
-            try:
-                new_page = createPages(connected, sensordict, livedata, unit, page, burntime, plotdata)
-                return new_page
-            except:
-                return 'Loading data'
+            # if len(livedata) > 10:
+            #     plotdata = livedata.tail(10)
+            deque_list['Time'].append(new[0])
+            for i in range(len(new)-1)[1:]:
+                deque_list[sensordict['Abv'][i]].append(new[i])
+            # print(deque_list)
+            # try:
+            #     return createPages(connected, sensordict, livedata, unit, page, burntime, deque_list)
+            # except:
+            #     return 'Loading data'
+            return createPages(connected, sensordict, livedata, unit, page, burntime, deque_list)
 
 @functools32.lru_cache(maxsize=32)
 @app.callback(
@@ -283,7 +294,13 @@ def changeActuation(page, OV4_click, OV5_click, NV2_click, WV2_click):
 #         return 'Added to CSV'
 
     
+external_css = ["https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css"]
+for css in external_css:
+    app.css.append_css({"external_url": css})
 
+external_js = ['https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js']
+for js in external_css:
+    app.scripts.append_script({'external_url': js})
 
 #############################################################################################################################################################################################
 #Run local host:

@@ -173,7 +173,6 @@ app = dash.Dash()
 app.config['suppress_callback_exceptions']=True
 
 #Add CSS and other external dash files
-app.css.append_css({'external_url': 'https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css'})
 Logo = 'Logo.png'
 encoded_image = base64.b64encode(open(Logo, 'rb').read())
 
@@ -192,11 +191,18 @@ app.layout = html.Div(id='Page', children=[
                         {'label': 'Fill Calculator', 'value': 'FillCalc'},
                 ],
                 value='Plots'
-                )
-            ])
+                ),
+            dcc.RadioItems(
+                id='toggle-units',
+                options=[
+                        {'label': 'SI', 'value': 'SI'},
+                        {'label': 'IPS', 'value': 'IPS'},
+                ],
+                value='SI'
+                ),
         ]),
     html.Main(id='Content'),
-    # html.Div(className='Sidebar')
+    ])
 ])
 
 #############################################################################################################################################################################################

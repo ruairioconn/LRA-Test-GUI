@@ -120,7 +120,7 @@ def Live_Table(sensordict, data, unit):
 		if unit == 'IPS':
 		    value = SItoIPS(value, u)
 		    u = unitStr(u)
-		s = str(value) + '\n (' + u + ')'
+		s = str(value) + '\n (' + str(u) + ')'
 		values.append(s)
 		header.append(name)
 	cells = dict(values=values)
@@ -129,44 +129,108 @@ def Live_Table(sensordict, data, unit):
 	fig = dict(data=[trace])
 	return dcc.Graph(id='live-data-table', figure=fig)       
 
-def makePlots(sensordict, data, unit, burntime, plotdata):
-	traces = []
-	n = len(sensordict)
-	rowsn= int(math.ceil(n/2.0))
-	fig = tools.make_subplots(rows=rowsn, cols=2, subplot_titles=sensordict['Name'], print_grid=False)
-	titles=[]
-	if unit == 'SI':
-		for i in range(len(sensordict)):
-		    traces.append(go.Scatter(
-		        x=[row for row in plotdata['Time']],
-		        y=[row for row in plotdata[sensordict['Abv'][i]]],
-		        hoverinfo='y'
-		    ))
-		    titles.append(sensordict['Name'][i])
-	elif unit == 'IPS':
-		for i in range(len(sensordict)):
-		    traces.append(go.Scatter(
-		        x=[row for row in plotdata['Time']],
-		        y=[SItoIPS(row, sensordict['SIunit'][i]) for row in plotdata[sensordict['Abv'][i]]],
-		        hoverinfo='y'
-		    ))
-		    titles.append(sensordict['Name'][i])
-	count = 0
-	for i in range(rowsn):
-	    for j in range(2):
-	        if count >= n:
-	            break
-	        fig['layout']['annotations'][count]['font'].update(color='#ffffff')
-	        fig.append_trace(traces[count], i+1, j+1)
-	        fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2, range=[-0.25, burntime+0.25])
-	        fig['layout']['yaxis'+str(count + 1)].update(title=sensordict['SIunit'][count], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
-	        if unit == 'IPS':
-	        	u = unitStr(sensordict['SIunit'][count])
-	        	fig['layout']['yaxis'+str(count + 1)].update(title=u)
-	        count += 1
+# def makePlots(sensordict, data, unit, burntime, plotdata):
+# 	traces = []
+# 	n = len(sensordict)
+# 	rowsn= int(math.ceil(n/2.0))
+# 	fig = tools.make_subplots(rows=rowsn, cols=2, subplot_titles=sensordict['Name'], print_grid=False)
+# 	titles=[]
+# 	if unit == 'SI':
+# 		for i in range(len(sensordict)):
+# 		    traces.append(go.Scatter(
+# 		        x=[row for row in plotdata['Time']],
+# 		        y=[row for row in plotdata[sensordict['Abv'][i]]],
+# 		        hoverinfo='y'
+# 		    ))
+# 		    titles.append(sensordict['Name'][i])
+# 	elif unit == 'IPS':
+# 		for i in range(len(sensordict)):
+# 		    traces.append(go.Scatter(
+# 		        x=[row for row in plotdata['Time']],
+# 		        y=[SItoIPS(row, sensordict['SIunit'][i]) for row in plotdata[sensordict['Abv'][i]]],
+# 		        hoverinfo='y'
+# 		    ))
+# 		    titles.append(sensordict['Name'][i])
+# 	count = 0
+# 	for i in range(rowsn):
+# 	    for j in range(2):
+# 	        if count >= n:
+# 	            break
+# 	        fig['layout']['annotations'][count]['font'].update(color='#ffffff')
+# 	        fig.append_trace(traces[count], i+1, j+1)
+# 	        fig['layout']['xaxis'+str(count + 1)].update(title='Time', showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2, range=[-0.25, burntime+0.25])
+# 	        fig['layout']['yaxis'+str(count + 1)].update(title=sensordict['SIunit'][count], showline=True, mirror=True, showgrid=True, color='#ffffff', linecolor='#bf5700', linewidth=3, gridcolor='#333f48', zerolinecolor='#bf5700', zerolinewidth=2)
+# 	        if unit == 'IPS':
+# 	        	u = unitStr(sensordict['SIunit'][count])
+# 	        	fig['layout']['yaxis'+str(count + 1)].update(title=u)
+# 	        count += 1
 
-	fig['layout'].update(title='Recorded Data', height=400*rowsn, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})   
-	return dcc.Graph(id='plots', figure=fig, animate=True)
+# 	fig['layout'].update(title='Recorded Data', height=400*rowsn, showlegend=False, paper_bgcolor='#333f48', plot_bgcolor='#ffffff', titlefont={'color':'#ffffff'})   
+# 	return dcc.Graph(id='plots', figure=fig, animate=True)
+
+def makePlotsLive(sensordict, data, unit, burntime, plotdata):
+    graphs = []
+    # update_obd_values(times, oil_temps, intake_temps, coolant_temps, rpms, speeds, throttle_pos)
+    if len(sensordict)>2:
+        class_choice = 'col s12 m6 l4'
+    elif len(sensordict) == 2:
+        class_choice = 'col s12 m6 l6'
+    else:
+        class_choice = 'col s12'
+
+
+    for sensor in sensordict['Abv']:
+    	times = plotdata['Time']
+        data = go.Scatter(
+            x=list(times),
+            y=list(plotdata[sensor]),
+            name='Scatter',
+            fill="tozeroy",
+            fillcolor="#6897bb"
+            )
+
+        graphs.append(html.Div(dcc.Graph(
+            id=sensor,
+            animate=True,
+            figure={'data': [data],'layout' : go.Layout(xaxis=dict(range=[min(times),max(times)]),
+                                                        yaxis=dict(range=[min(plotdata[sensor]),max(plotdata[sensor])]),
+                                                        margin={'l':50,'r':1,'t':45,'b':45},
+                                                        title='{}'.format(sensordict['Name'][np.where(sensordict['Abv']==sensor)[0][0]]))}
+            ), className=class_choice))
+
+    return graphs
+
+def makePlotsStatic(sensordict, data, unit, burntime, plotdata):
+    graphs = []
+    # update_obd_values(times, oil_temps, intake_temps, coolant_temps, rpms, speeds, throttle_pos)
+    if len(sensordict)>2:
+        class_choice = 'col s12 m6 l4'
+    elif len(sensordict) == 2:
+        class_choice = 'col s12 m6 l6'
+    else:
+        class_choice = 'col s12'
+
+
+    for sensor in sensordict['Abv']:
+    	times = plotdata['Time']
+        data = go.Scatter(
+            x=list(times),
+            y=list(plotdata[sensor]),
+            name='Scatter',
+            fill="tozeroy",
+            fillcolor="#6897bb"
+            )
+
+        graphs.append(html.Div(dcc.Graph(
+            id=sensor,
+            animate=True,
+            figure={'data': [data],'layout' : go.Layout(xaxis=dict(range=[-0.25,burntime+0.25]),
+                                                        yaxis=dict(range=[min(plotdata[sensor]),max(plotdata[sensor])]),
+                                                        margin={'l':50,'r':1,'t':45,'b':45},
+                                                        title='{}'.format(sensor))}
+            ), className=class_choice))
+
+    return graphs
 
 def calibration(sensordict):
 	content = html.Div(children=[
@@ -211,7 +275,7 @@ def createPages(connected, sensordict, data, unit, page, burntime, plotdata):
 			content = calibration(sensordict)
 			return content
 		elif page == 'Plots':
-			graph = makePlots(sensordict, data, unit, burntime, plotdata)
+			graph = makePlotsLive(sensordict, data, unit, burntime, plotdata)
 			return graph
 			# return html.H2('No plots to show')
 	if connected == False:
@@ -230,5 +294,5 @@ def createPages(connected, sensordict, data, unit, page, burntime, plotdata):
 			# return content
 			return html.H2('No live data to show')
 		elif page == 'Plots':
-			graph = makePlots(sensordict, data, unit, burntime, plotdata)
+			graph = makePlotsStatic(sensordict, data, unit, burntime, plotdata)
 			return graph
