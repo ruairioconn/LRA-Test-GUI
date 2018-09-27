@@ -67,8 +67,8 @@ ISR(TIMER1_COMPA_vect)          // timer compare interrupt service routine
 
 void handleCommand()
 {
-  Serial.print("Command received: ");
-  Serial.println(incomingString);
+  //Serial.print("Command received: ");
+  //Serial.println(incomingString);
   if(strcmp(incomingString, "stop") == 0)
   {
     takeLog = false;
@@ -80,22 +80,22 @@ void handleCommand()
   else if(strcmp(incomingString, "WV2") == 0)
   {
    if(sensors[WV2_INDEX].readPin() == LOW) {sensors[WV2_INDEX].setPinMode(HIGH);}
-   else{sensors[WV2_INDEX].setPinMode(LOW);}
+   else {sensors[WV2_INDEX].setPinMode(LOW);}
   }
   else if(strcmp(incomingString, "OV4") == 0)
   {
    if(sensors[OV4_INDEX].readPin() == LOW) {sensors[OV4_INDEX].setPinMode(HIGH);}
-   else{sensors[OV4_INDEX].setPinMode(LOW);}
+   else {sensors[OV4_INDEX].setPinMode(LOW);}
   }
   else if(strcmp(incomingString, "OV5") == 0)
   {
    if(sensors[OV5_INDEX].readPin() == LOW) {sensors[OV5_INDEX].setPinMode(HIGH);}
-   else{sensors[OV5_INDEX].setPinMode(LOW);}
+   else {sensors[OV5_INDEX].setPinMode(LOW);}
   }
   else if(strcmp(incomingString, "NV2") == 0)
   {
    if(sensors[NV2_INDEX].readPin() == LOW) {sensors[NV2_INDEX].setPinMode(HIGH);}
-   else{sensors[NV2_INDEX].setPinMode(LOW);}
+   else {sensors[NV2_INDEX].setPinMode(LOW);}
   }
   else
   {
