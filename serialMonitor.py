@@ -74,14 +74,14 @@ class SerialMonitor(threading.Thread):
         self.serialConnection.write(bytesToSend)
 
 
-if __name__ == "__main__":
-    comPort = "COM28"
-    newMonitor = SerialMonitor(comPort)
-    newMonitor.start()
-    while True:
-        if newMonitor.lineReady:
-            print(newMonitor.getCurrentLine())
+# if __name__ == "__main__":
+#     comPort = "/dev/ttyS7"
+#     newMonitor = SerialMonitor(comPort)
+#     newMonitor.start()
+#     while True:
+#         if newMonitor.lineReady:
+#             print(newMonitor.getCurrentLine())
 
-        command = input(">>:")
-        if len(command):
-            newMonitor.sendStringToComPort(command + "\n")
+#         command = input(">>:")
+#         if len(command):
+#             newMonitor.sendStringToComPort(command + "\n")

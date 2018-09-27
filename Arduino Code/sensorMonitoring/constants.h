@@ -10,11 +10,11 @@
  */ 
 
 #define BAUD_RATE 9600
-#define DESIRED_FREQUENCY_BETWEEN_READINGS 1 // In HZ, can go below one just make sure you'd specify it with a zero in front EX: 0.125 
+#define DESIRED_FREQUENCY_BETWEEN_READINGS 10 // In HZ, can go below one just make sure you'd specify it with a zero in front EX: 0.125 
 
-#define NUM_SENSORS 11   // number of interfaceable modules on the board
+#define NUM_SENSORS 9   // number of interfaceable modules on the board
 
-Sensor sensors[11] = { {"digitalI", 6} , {"digitalI", 7} , {"digitalI", 8} , {"digitalI", 9} , {"analog", A2} , {"analog", A3} , {"analog", A4} , {"digitalO", 2} , {"digitalO", 3} , {"digitalO", 4} , {"digitalO", 5} };
+Sensor sensors[9] = { {"digitalI", 6} , {"digitalI", 7} , {"digitalI", 8} , {"digitalI", 9} , {"analog", A0} , {"analog", A1} , {"analog", A2} , {"analog", A3} , {"analog", A4} };
 
 #define SOLENOID_INDEX 6 // The solenoids do not have zero indexing, so start this one before the actual first index of the solenoids
 

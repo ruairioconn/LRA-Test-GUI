@@ -181,15 +181,14 @@ def makePlotsLive(sensordict, data, unit, burntime, plotdata):
 
     for sensor in sensordict['Abv']:
     	times = plotdata['Time']
-        data = go.Scatter(
-            x=list(times),
-            y=list(plotdata[sensor]),
-            name='Scatter',
-            fill="tozeroy",
-            fillcolor="#6897bb"
+    	data = go.Scatter(
+        	x=list(times),
+        	y=list(plotdata[sensor]),
+        	name='Scatter',
+        	fill="tozeroy",
+        	fillcolor="#6897bb"
             )
-
-        graphs.append(html.Div(dcc.Graph(
+    	graphs.append(html.Div(dcc.Graph(
             id=sensor,
             animate=True,
             figure={'data': [data],'layout' : go.Layout(xaxis=dict(range=[min(times),max(times)]),
@@ -200,9 +199,8 @@ def makePlotsLive(sensordict, data, unit, burntime, plotdata):
 
     return graphs
 
-def makePlotsStatic(sensordict, data, unit, burntime, plotdata):
+def makePlotsStatic(sensordict, data, unit, burntime, plotdata, timelist):
     graphs = []
-    # update_obd_values(times, oil_temps, intake_temps, coolant_temps, rpms, speeds, throttle_pos)
     if len(sensordict)>2:
         class_choice = 'col s12 m6 l4'
     elif len(sensordict) == 2:
@@ -212,16 +210,15 @@ def makePlotsStatic(sensordict, data, unit, burntime, plotdata):
 
 
     for sensor in sensordict['Abv']:
-    	times = plotdata['Time']
-        data = go.Scatter(
+    	times = timelist
+    	data = go.Scatter(
             x=list(times),
             y=list(plotdata[sensor]),
             name='Scatter',
             fill="tozeroy",
             fillcolor="#6897bb"
             )
-
-        graphs.append(html.Div(dcc.Graph(
+    	graphs.append(html.Div(dcc.Graph(
             id=sensor,
             animate=True,
             figure={'data': [data],'layout' : go.Layout(xaxis=dict(range=[-0.25,burntime+0.25]),
@@ -252,7 +249,7 @@ def calibration(sensordict):
 		])
 	return content
 
-def createPages(connected, sensordict, data, unit, page, burntime, plotdata):
+def createPages(connected, sensordict, data, unit, page, burntime, plotdata, timelist):
 	if connected == True:
 		if page == 'PID':
 			live_table = Live_Table(sensordict, data, unit)
@@ -275,7 +272,7 @@ def createPages(connected, sensordict, data, unit, page, burntime, plotdata):
 			content = calibration(sensordict)
 			return content
 		elif page == 'Plots':
-			graph = makePlotsLive(sensordict, data, unit, burntime, plotdata)
+			graph = makePlotsLive(sensordict, data, unit, burntime, plotdata, timelist)
 			return graph
 			# return html.H2('No plots to show')
 	if connected == False:

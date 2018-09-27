@@ -9,14 +9,15 @@ import math
 from plotly import tools
 import numpy as np
 from scipy import optimize
-import serial
+# import serial
 import os
 import pandas as pd
 from functions import SItoIPS, unitStr, Live_Table, FillCalcTable, makePlotsStatic, calibration, createPages, makePlotsLive
 from sys import platform
-import functools32
+# import functools32
 import logging
 from collections import deque
+import serialMonitor as sm
 
 # log = logging.getLogger('werkzeug')
 # log.setLevel(logging.ERROR)
@@ -25,11 +26,13 @@ from collections import deque
 # Setup Serial
 # if platform.startswith()
 if platform.startswith('lin'):
-    os.system('sudo chmod 666 /dev/ttyS3')
+    os.system('sudo chmod 666 /dev/ttyS7')
 # ser = serial.Serial('/dev/ttyS3', 9600)
 
 connected = False
-ser = 0
+newMonitor = 0
+time = 0
+timelist = [0]
 # burntime = 10
 OV4 = 0
 OV5 = 0 
@@ -44,7 +47,7 @@ actuation = str(OV4) + ' ' + str(OV5) + ' ' + str(NV2) + ' ' + str(WV2)
 with open('sensor_data/sensor_input.txt') as sensorcsv:
     sensordict = pd.read_csv(sensorcsv, delimiter='\t')
 
-data_header = pd.Series('Time').append(sensordict.Abv, ignore_index=True)
+data_header = sensordict.Abv
 livedata = pd.DataFrame(columns=data_header)
 
 deque_list = {'Time': deque(maxlen=10)}
@@ -64,7 +67,7 @@ encoded_image = base64.b64encode(open(Logo, 'rb').read())
 app.layout = html.Header(id='Page', children=[
     dcc.Interval(
         id='update',
-        interval=1000,
+        interval=100,
         n_intervals=0
         ),
     html.Div(className='row', style={'vertical-align':'middle'}, children=[
@@ -111,7 +114,7 @@ app.layout = html.Header(id='Page', children=[
 
 #############################################################################################################################################################################################
 #Callbacks:
-@functools32.lru_cache(maxsize=32)
+# @functools32.lru_cache(maxsize=32)
 @app.callback(
     Output(component_id='channel-id', component_property='children'),
     [Input(component_id='input-port', component_property='value'),
@@ -119,16 +122,22 @@ app.layout = html.Header(id='Page', children=[
     )
 def set_Channel(port, n_clicks):
     global connected
-    global ser
+    global newMonitor
+    global time
+    global timelist
     print(port, n_clicks)
     if port != 0 and n_clicks%2 != 0:
         port = str(port)
         if platform.startswith('lin'):
             print('Connecting to serial port')
             try:
-                ser = serial.Serial('/dev/ttyS'+port, 9600)
+                newMonitor = sm.SerialMonitor('/dev/ttyS'+port)
+                newMonitor.start()
+                # ser = serial.Serial('/dev/ttyS'+port, 9600)
                 connected = True
                 print('Connected on port: ' + port)
+                time = 0
+                timelist = [0]
                 return 'Connected on port: /dev/ttyS' + port
             except:
                 print('Serial port not found')
@@ -136,9 +145,13 @@ def set_Channel(port, n_clicks):
         elif platform.startswith('win'):
             print('Connecting to serial port')
             try:
-                ser = serial.Serial('COM'+port, 9600)
+                newMonitor = sm.SerialMonitor('COM'+port)
+                newMonitor.start()
+                # ser = serial.Serial('COM'+port, 9600)
                 connected = True
                 print('Connected on port: ' + port)
+                time = 0
+                timelist = [0]
                 return 'Connected on port: COM' + port
             except:
                 print('Serial port not found')
@@ -162,37 +175,35 @@ def update_Data(page, unit, rw, file):
     global ser
     global livedata
     global actuation
+    global time
+    global timelist
     if connected == True:
-        if ser.inWaiting() > 0:
-            new = ser.readline()
+        if newMonitor.lineReady:
+            new = newMonitor.getCurrentLine()
             new = new.split(',')
             new = [float(i) for i in new]
-            print(len(data_header))
-            print(len(new))
             for i in range(len(new)-1):
                 new[i] = new[i]*sensordict['a'][i] + sensordict['b'][i]
             livedata.loc[len(livedata)] = new
-            ser.reset_output_buffer()
-            burntime = 10
-            ser.write(actuation)
-            print(actuation)
-            if len(livedata['Time'])%10 == 0 and rw == 'w':
-                print('Writing')
-                livedata.to_csv('data/'+file+'.txt', sep='\t')
-                sensordict.to_csv('sensor_data/'+file+'_sensor_input.txt', sep='\t')
-            # if len(livedata) > 10:
-            #     plotdata = livedata.tail(10)
             deque_list['Time'].append(new[0])
             for i in range(len(new)-1)[1:]:
                 deque_list[sensordict['Abv'][i]].append(new[i])
-            # print(deque_list)
-            # try:
-            #     return createPages(connected, sensordict, livedata, unit, page, burntime, deque_list)
-            # except:
-            #     return 'Loading data'
-            return createPages(connected, sensordict, livedata, unit, page, burntime, deque_list)
+        if len(livedata['OPT1'])%10 == 0 and rw == 'w':
+            print('Writing')
+            livedata.to_csv('data/'+file+'.txt', sep='\t')
+            sensordict.to_csv('sensor_data/'+file+'_sensor_input.txt', sep='\t')
+        # if len(livedata) > 10:
+        #     plotdata = livedata.tail(10)
+        time += 1
+        timelist.append(time)
+        burntime = 10
+        # try:
+        #     return createPages(connected, sensordict, livedata, unit, page, burntime, deque_list)
+        # except:
+        #     return 'Loading data'
+        return createPages(connected, sensordict, livedata, unit, page, burntime, deque_list, timelist)
 
-@functools32.lru_cache(maxsize=32)
+# @functools32.lru_cache(maxsize=32)
 @app.callback(
     Output(component_id='static-content', component_property='children'),
     [Input(component_id='change-page', component_property='value'),
@@ -216,12 +227,12 @@ def static_Data(page, unit, rw, file):
             for i in range(len(staticdata['Time'])):
                 staticdata['Time'][i] -= starttime
             burntime = endtime - starttime
-            new_page = createPages(connected, sensordict, staticdata, unit, page, burntime, staticdata)
+            new_page = createPages(connected, sensordict, staticdata, unit, page, burntime, staticdata, timelist)
             return new_page
         except:
             return 'Please enter valid filename'
 
-@functools32.lru_cache(maxsize=32)
+# @functools32.lru_cache(maxsize=32)
 @app.callback(
     Output(component_id='act-string', component_property='children'),
     [Input(component_id='change-page', component_property='value'),

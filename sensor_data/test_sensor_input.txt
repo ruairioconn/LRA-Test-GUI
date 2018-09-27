@@ -1,12 +1,10 @@
 	Class	Name	Abv	Channel	SIunit	a	b
-0	Thermocouple	Nitrous Tank Temp	OTC1	1	degC	1	0
-1	Thermocouple	Combustion Chamber Temp	OTC2	2	degC	1	0
-2	Thermocouple	Throat Temp	OTC3	3	degC	1	0
-3	Thermocouple	Exit Temp	OTC4	4	degC	1	0
-4	Load Cell	Thrust	LC5	5	N	1	0
-5	Load Cell	Accumulator Scale	LC1-4	6	N	1	0
-6	PT	Tank Pressure	OPT1	7	kPa	1	0
-7	PT	Feed Pressure	OPT2	8	kPa	1	0
-8	PT	Chamber Pressure	OPT3	9	kPa	1	0
-9	PT	Nitrogen Pressure	NPT1	10	kPa	1	0
-10	PT	Pneumatic Pressure	NPT2	11	kPa	1	0
+0	Limit Switch	Oxidizer Run Valve	LS1	1		1	0
+1	Limit Switch	Nitrogen Purge Valve	LS2	2		1	0
+2	Limit Switch	Sprinkler Valve	LS3	3		1	0
+3	Limit Switch	Oxidizer Vent Valve	LS4	4		1	0
+4	PT	Tank Pressure	OPT1	5	kPa	1	0
+5	PT	Feed Pressure	OPT2	6	kPa	1	0
+6	PT	Chamber Pressure	OPT3	7	kPa	1	0
+7	PT	Nitrogen Purge Pressure	NPT1	8	kPa	1	0
+8	PT	Pnuematic Control Pressure	NPT2	9	kPa	1	0
