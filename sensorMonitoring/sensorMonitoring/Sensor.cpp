@@ -38,7 +38,7 @@ int Sensor::readDigitalPin(int pinNumber, char* type)
   if(strcmp(type, "digitalO") == 0)
   {
     if(pinNumber <= 7 ) {return bitRead(PORTD, pinNumber);}
-    else{return bitRead(PORTB, pinNumber);}
+    else{return bitRead(PORTB, pinNumber - 8);}
   }
   else
   {
@@ -49,9 +49,10 @@ int Sensor::readDigitalPin(int pinNumber, char* type)
 int Sensor::readAnalogPin(int pinNumber)
 {
   float reading = analogRead(pinNumber);
-  float readingInVolts = reading / 256.0;
+  float readingInVolts = reading/205.0;
   int readingInMiliVolts = readingInVolts * 1000;
   return readingInMiliVolts;
+  //return analogRead(pinNumber);
 }
 
 int Sensor::readPin()
@@ -70,7 +71,7 @@ void Sensor::setPinMode(int state)
 {
   if(strcmp(this->getType(), "digitalO") == 0)
   {
-    digitalWrite(this->pinNumber, HIGH);
+    digitalWrite(this->pinNumber, state);
   }
 }
 

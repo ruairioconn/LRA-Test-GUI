@@ -34,12 +34,6 @@ newMonitor = 0
 time = 0
 timelist = [0]
 # burntime = 10
-OV4 = 0
-OV5 = 0 
-NV2 = 0
-WV2 = 0
-actuation = str(OV4) + ' ' + str(OV5) + ' ' + str(NV2) + ' ' + str(WV2) 
-# data = np.array([5, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1])
 
 #########################################################################################################
 # Import sensor data
@@ -67,7 +61,7 @@ encoded_image = base64.b64encode(open(Logo, 'rb').read())
 app.layout = html.Header(id='Page', children=[
     dcc.Interval(
         id='update',
-        interval=100,
+        interval=1000,
         n_intervals=0
         ),
     html.Div(className='row', style={'vertical-align':'middle'}, children=[
@@ -247,35 +241,21 @@ def changeActuation(page, OV4_click, OV5_click, NV2_click, WV2_click):
     global OV5 
     global NV2
     global WV2
-    global actuation
+    global newMonitor
     if connected==True and page == 'PID':
-        if OV4_click != 0:
-            OV4 += 1
-        if OV5_click != 0:
-            OV5 += 1
-        if NV2_click != 0:
-            NV2 += 1
-        if WV2_click != 0:
-            WV2 += 1
-
-        if OV4%2 == 0:
-            OV4_act = 0
-        else:
-            OV4_act = 1
-        if OV5%2 == 0:
-            OV5_act = 0
-        else:
-            OV5_act = 1
-        if NV2%2 == 0:
-            NV2_act = 0
-        else:
-            NV2_act = 1
-        if WV2%2 == 0:
-            WV2_act = 0
-        else:
-            WV2_act = 1
-        actuation = str(OV4_act) + ' ' + str(OV5_act) + ' ' + str(NV2_act) + ' ' + str(WV2_act)
-        return actuation
+        print(WV2_click)
+        if OV4_click == 1:
+            newMonitor.sendStringToComPort('OV4\n')
+            return('Actuated OV4')
+        if OV5_click == 1:
+            newMonitor.sendStringToComPort('OV5\n')
+            return('Actuated OV5')
+        if NV2_click == 1:
+            newMonitor.sendStringToComPort('NV2\n')
+            return('Actuated NV2')
+        if WV2_click == 1:
+            newMonitor.sendStringToComPort('WV2\n')
+            return('Actuated WV2')
 
 # @app.callback(Output(component_id='click-message', component_property='children'),
 #               [Input(component_id='write-csv', component_property='n_clicks')],
